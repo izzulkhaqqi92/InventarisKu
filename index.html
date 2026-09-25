@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="InventarisKu - PWA inventaris barang dengan Supabase" />
+  <title>InventarisKu</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css?v=6.4" />
+</head>
+<body>
+  <div id="splash" class="splash" aria-live="polite">
+    <img class="splash__logo" src="icons/icon-192.png" alt="" width="72" height="72" />
+    <div class="splash__identity">
+      <strong>InventarisKu</strong>
+      <span>Sistem Inventaris Barang</span>
+    </div>
+    <p class="splash__creator">SMK Krian 1 Sidoarjo • Rekayasa Perangkat Lunak</p>
+    <div class="splash__loading" aria-label="Memuat aplikasi">
+      <div class="splash__track"><span id="splashProgressBar"></span></div>
+      <p id="splashStatus">Menyiapkan aplikasi...</p>
+    </div>
+  </div>
+
+  <section id="loginView" class="auth-view" hidden>
+    <div class="auth-panel">
+      <div class="auth-brand">
+        <div class="brand-mark" aria-hidden="true">□</div>
+        <div><strong>InventarisKu</strong><span>Sistem Inventaris Barang</span></div>
+      </div>
+      <div class="auth-copy">
+        <h1>Masuk ke aplikasi</h1>
+        <p>Data inventaris hanya tersedia untuk akun yang terautentikasi.</p>
+      </div>
+      <form id="loginForm" class="auth-form" novalidate>
+        <label class="field">
+          <span>Email</span>
+          <input id="loginEmail" type="email" autocomplete="username" required placeholder="nama@email.com" />
+          <small id="loginEmailError" class="field-message"></small>
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <div class="password-wrap">
+            <input id="loginPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Password" />
+            <button id="togglePasswordBtn" class="text-button" type="button" aria-label="Tampilkan password">Lihat</button>
+          </div>
+          <small id="loginPasswordError" class="field-message"></small>
+        </label>
+        <div id="loginStatus" class="auth-status" role="status" aria-live="polite"></div>
+        <button id="loginBtn" class="btn btn--primary btn--block" type="submit">Masuk</button>
+      </form>
+      <p class="auth-note">Sesi berakhir otomatis setelah 2 jam. Menutup tab/aplikasi menghapus sesi lokal.</p>
+    </div>
+  </section>
+
+  <div id="appShell" hidden>
+    <div id="offlineBanner" class="offline-banner" hidden>Mode offline — data terakhir tetap dapat dilihat, perubahan membutuhkan internet.</div>
+
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="brand" href="#top" aria-label="InventarisKu">
+          <div class="brand-mark" aria-hidden="true">□</div>
+          <div class="brand-copy"><strong>InventarisKu</strong><span>Sistem Inventaris Barang</span></div>
+        </a>
+        <div class="topbar__actions">
+          <div id="connectionPill" class="connection-pill"><i></i><span id="connectionText">Online</span></div>
+          <button id="installBtn" class="btn btn--quiet topbar-install" type="button" hidden>Install</button>
+          <div class="user-menu-wrap">
+            <button id="userMenuBtn" class="user-button" type="button" aria-haspopup="true" aria-expanded="false">
+              <span id="userInitial">U</span><b id="userEmail">User</b><i>⌄</i>
+            </button>
+            <div id="userMenu" class="user-menu" hidden>
+              <div class="user-menu__identity"><strong id="menuUserEmail">-</strong><span id="sessionRemaining">Sesi aktif</span></div>
+              <div class="user-menu__section">
+                <span class="menu-label">Tema</span>
+                <div class="theme-options" role="group" aria-label="Tema tampilan">
+                  <button type="button" data-theme-choice="light">Light</button>
+                  <button type="button" data-theme-choice="dark">Dark</button>
+                  <button type="button" data-theme-choice="system">System</button>
+                </div>
+              </div>
+              <button id="logoutBtn" class="menu-action menu-action--danger" type="button">Keluar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="container">
+      <section class="page-heading">
+        <div>
+          <span class="eyebrow">INVENTARIS</span>
+          <h1>Inventaris Barang</h1>
+          <p><span id="lastSync">Belum disinkronkan</span> • Kelola data, stok, dan nilai inventaris.</p>
+        </div>
+        <div class="page-actions">
+          <button id="openOpnameBtn" class="btn btn--secondary" type="button">Stok Opname</button>
+          <button id="openDataBtn" class="btn btn--secondary" type="button">Data</button>
+          <button id="openAddBtn" class="btn btn--primary" type="button">＋ Tambah Barang</button>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Ringkasan inventaris">
+        <div class="metric"><span>Total jenis</span><strong id="statJenis">0</strong><small>barang aktif</small></div>
+        <div class="metric"><span>Total stok</span><strong id="statStok">0</strong><small>semua satuan</small></div>
+        <div class="metric"><span>Nilai inventaris</span><strong id="statNilai">Rp0</strong><small>harga × stok</small></div>
+        <div class="metric"><span>Perlu perhatian</span><strong id="statMenipis">0</strong><small>stok ≤ 5</small></div>
+      </section>
+
+      <section class="surface analytics" aria-labelledby="analyticsTitle">
+        <div class="section-heading">
+          <div><span class="eyebrow">STATISTIK</span><h2 id="analyticsTitle">Ringkasan visual</h2></div>
+          <span id="analyticsCaption" class="section-caption">Berdasarkan data saat ini</span>
+        </div>
+        <div class="analytics-grid">
+          <div class="chart-block">
+            <div class="chart-title"><strong>Jumlah per kategori</strong><span>Jenis barang</span></div>
+            <div id="chartCategoryCount" class="bar-chart"></div>
+          </div>
+          <div class="chart-block">
+            <div class="chart-title"><strong>Nilai per kategori</strong><span>Harga × stok</span></div>
+            <div id="chartCategoryValue" class="bar-chart"></div>
+          </div>
+          <div class="chart-block chart-block--stock">
+            <div class="chart-title"><strong>Status stok</strong><span>Aman, menipis, habis</span></div>
+            <div class="stock-chart-wrap">
+              <div id="stockDonut" class="stock-donut" aria-label="Distribusi status stok"><span id="stockDonutTotal">0</span></div>
+              <div id="stockLegend" class="stock-legend"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="surface inventory-section" aria-labelledby="inventoryTitle">
+        <div class="section-heading inventory-heading">
+          <div><span class="eyebrow">DAFTAR BARANG</span><h2 id="inventoryTitle">Inventaris</h2><p id="resultInfo">Memuat data...</p></div>
+          <button id="refreshBtn" class="icon-button" type="button" aria-label="Muat ulang data" title="Muat ulang">↻</button>
+        </div>
+
+        <div id="inventoryToolbar" class="toolbar">
+          <div class="toolbar__top">
+            <label class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input id="searchInput" type="search" autocomplete="off" placeholder="Cari nama atau kode barang (contoh ELK001)..." />
+            </label>
+            <button id="mobileFilterToggle" class="btn btn--secondary mobile-filter-toggle" type="button" aria-expanded="false" aria-controls="filterControls">
+              Filter <span id="mobileFilterCount" class="filter-count" hidden>0</span>
+            </button>
+          </div>
+          <div id="filterControls" class="toolbar__filters">
+            <label><span class="sr-only">Kategori</span><select id="categoryFilter"><option value="">Semua kategori</option></select></label>
+            <label><span class="sr-only">Stok</span><select id="stockFilter"><option value="">Semua stok</option><option value="available">Stok aman</option><option value="low">Menipis</option><option value="empty">Habis</option></select></label>
+            <label><span class="sr-only">Urutkan</span><select id="sortFilter"><option value="newest">Terbaru</option><option value="name-asc">Nama A–Z</option><option value="stock-asc">Stok terendah</option><option value="stock-desc">Stok tertinggi</option><option value="price-desc">Harga tertinggi</option></select></label>
+            <button id="clearFiltersBtn" class="btn btn--quiet" type="button">Reset</button>
+          </div>
+        </div>
+
+        <div id="loadingState" class="state-line">Mengambil data inventaris...</div>
+        <div id="emptyState" class="empty-state" hidden><strong>Inventaris masih kosong</strong><p>Tambahkan barang pertama untuk mulai menggunakan aplikasi.</p><button id="emptyAddBtn" class="btn btn--primary" type="button">Tambah Barang</button></div>
+        <div id="noResultState" class="empty-state" hidden><strong>Data tidak ditemukan</strong><p>Coba kata kunci atau filter yang berbeda.</p></div>
+
+        <div id="inventoryList" class="inventory-list" aria-live="polite">
+          <div class="inventory-list__head" aria-hidden="true"><span>Barang</span><span>Kategori</span><span>Stok</span><span>Harga</span><span>Lokasi</span><span></span></div>
+          <div id="inventoryRows"></div>
+          <nav id="inventoryPagination" class="pagination" aria-label="Halaman inventaris" hidden>
+            <span id="inventoryPageInfo" class="pagination__info"></span>
+            <div class="pagination__actions">
+              <button id="inventoryPrevBtn" class="btn btn--secondary btn--small" type="button">← Sebelumnya</button>
+              <button id="inventoryNextBtn" class="btn btn--secondary btn--small" type="button">Berikutnya →</button>
+            </div>
+          </nav>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">InventarisKu • PWA + Supabase</footer>
+  </div>
+
+  <!-- FORM BARANG -->
+  <dialog id="formDialog" class="modal modal--wide">
+    <form id="itemForm" class="modal-surface modal-layout" novalidate>
+      <header class="modal-header">
+        <div><span id="formEyebrow" class="eyebrow">CREATE</span><h2 id="formTitle">Tambah Barang</h2><p>Isi informasi barang. Validasi berjalan langsung saat mengetik.</p></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Tutup">×</button>
+      </header>
+      <div class="modal-body form-body">
+        <section class="form-section">
+          <div class="form-section__title"><b>01</b><div><strong>Identitas</strong><span>Nama, kategori, dan kode barang.</span></div></div>
+          <div class="form-grid">
+            <label class="field field--span-2"><span>Nama Barang <b>*</b></span><input id="namaBarang" maxlength="100" required placeholder="Contoh: Mouse Wireless" /><small class="field-message"></small></label>
+            <div class="field field--span-2"><label for="kategori">Kategori <b>*</b></label><input id="kategori" list="kategoriList" maxlength="50" required autocomplete="off" placeholder="Pilih atau ketik kategori baru" /><datalist id="kategoriList"></datalist><div id="categoryAssist" class="category-assist" hidden><p id="categoryAssistText"></p><div><button id="useExistingCategoryBtn" class="btn btn--small btn--secondary" type="button">Gunakan yang ada</button><button id="keepNewCategoryBtn" class="btn btn--small btn--quiet" type="button">Tetap baru</button></div></div><small class="field-message"></small></div>
+            <label class="field field--span-2"><span>Kode Barang <b>*</b></span><div class="code-wrap"><input id="kodeBarang" maxlength="30" readonly required placeholder="Otomatis dari kategori" /><i>AUTO</i></div><small id="codeHelp" class="field-help">Pilih kategori untuk membuat kode otomatis.</small><small class="field-message"></small></label>
+          </div>
+        </section>
+        <section class="form-section">
+          <div class="form-section__title"><b>02</b><div><strong>Nilai & persediaan</strong><span>Harga, stok, satuan, dan kondisi.</span></div></div>
+          <div class="form-grid form-grid--four">
+            <label class="field"><span>Harga <b>*</b></span><div class="prefix-input"><i>Rp</i><input id="harga" type="number" min="0" max="999999999999" step="1" inputmode="numeric" required placeholder="0" /></div><small class="field-message"></small></label>
+            <label class="field"><span>Stok <b>*</b></span><input id="stok" type="number" min="0" max="2147483647" step="1" inputmode="numeric" required placeholder="0" /><small class="field-message"></small></label>
+            <label class="field"><span>Satuan <b>*</b></span><input id="satuan" list="satuanList" maxlength="30" required placeholder="Contoh: pcs" /><datalist id="satuanList"><option value="pcs"></option><option value="unit"></option><option value="box"></option><option value="pack"></option><option value="kg"></option><option value="liter"></option></datalist><small class="field-message"></small></label>
+            <label class="field"><span>Kondisi</span><select id="kondisi"><option>Baik</option><option>Perlu Dicek</option><option>Rusak</option></select><small class="field-message"></small></label>
+          </div>
+        </section>
+        <section class="form-section">
+          <div class="form-section__title"><b>03</b><div><strong>Sumber & penempatan</strong><span>Supplier dan lokasi penyimpanan.</span></div></div>
+          <div class="form-grid">
+            <label class="field"><span>Supplier <b>*</b></span><input id="supplier" maxlength="100" required placeholder="Nama supplier" /><small class="field-message"></small></label>
+            <label class="field"><span>Lokasi Penyimpanan</span><input id="lokasi" maxlength="100" placeholder="Contoh: Rak A2" /><small class="field-message"></small></label>
+          </div>
+        </section>
+        <section class="form-section form-section--image">
+          <div class="form-section__title"><b>04</b><div><strong>Foto barang</strong><span>Opsional • JPG, PNG, WebP • maksimal 5 MB.</span></div></div>
+          <div class="image-row">
+            <div id="imagePreview" class="image-preview"><span>＋</span><small>Belum ada gambar</small></div>
+            <div><label class="btn btn--secondary file-button" for="gambar">Pilih Gambar</label><input id="gambar" type="file" accept="image/jpeg,image/png,image/webp" hidden /><small id="imageError" class="field-message"></small></div>
+          </div>
+        </section>
+      </div>
+      <footer class="modal-footer"><button class="btn btn--secondary close-dialog" type="button">Batal</button><button id="saveBtn" class="btn btn--primary" type="submit"><span id="saveBtnText">Simpan Barang</span></button></footer>
+    </form>
+  </dialog>
+
+  <!-- DETAIL -->
+  <dialog id="detailDialog" class="modal"><div class="modal-surface"><header class="modal-header"><div><span class="eyebrow">DETAIL</span><h2>Detail Barang</h2></div><button class="icon-button close-dialog" type="button" aria-label="Tutup">×</button></header><div id="detailContent" class="modal-body"></div></div></dialog>
+
+  <!-- IMAGE VIEWER -->
+  <dialog id="imageDialog" class="modal image-viewer-dialog">
+    <div class="image-viewer">
+      <button class="icon-button image-viewer__close close-dialog" type="button" aria-label="Tutup gambar">×</button>
+      <div id="imageViewerStage" class="image-viewer__stage">
+        <img id="imageViewerImg" alt="" />
+        <div id="imageViewerFallback" class="image-viewer__fallback" hidden>Gambar tidak dapat dimuat.</div>
+      </div>
+      <div id="imageViewerName" class="image-viewer__name"></div>
+    </div>
+  </dialog>
+
+  <!-- DATA TOOLS -->
+  <dialog id="dataDialog" class="modal modal--wide">
+    <div class="modal-surface modal-layout">
+      <header class="modal-header"><div><span class="eyebrow">DATA</span><h2>Import, export & backup</h2><p>Alat data dipisahkan jelas antara database Supabase dan penyimpanan lokal.</p></div><button class="icon-button close-dialog" type="button" aria-label="Tutup">×</button></header>
+      <div class="modal-body data-tools">
+        <section class="tool-section">
+          <div class="tool-section__intro"><strong>Export database</strong><span>Unduh paket ZIP berisi file data dan gambar yang dipisahkan per kategori.</span></div>
+          <div class="tool-controls"><label class="field"><span>Format data</span><select id="exportFormat"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option></select></label><label class="field"><span>Cakupan</span><select id="exportScope"><option value="all">Semua data</option><option value="filtered">Hasil filter saat ini</option></select></label><button id="exportBtn" class="btn btn--primary" type="button">Export Paket ZIP</button></div>
+          <div id="exportStatus" class="tool-status" aria-live="polite"></div>
+        </section>
+        <section class="tool-section">
+          <div class="tool-section__intro"><strong>Import database</strong><span>Terima CSV/XLSX. Gambar sengaja dikosongkan dan dapat ditambahkan setelah import.</span></div>
+          <div class="import-row"><label class="btn btn--secondary file-button" for="importFile">Pilih CSV / XLSX</label><input id="importFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden /><span id="importFileName">Belum ada file</span></div>
+          <div id="importSummary" class="tool-status"></div>
+          <div id="importPreview" class="import-preview" hidden></div>
+          <div class="tool-actions"><button id="importBtn" class="btn btn--primary" type="button" disabled>Import ke Supabase</button></div>
+        </section>
+        <section class="tool-section">
+          <div class="tool-section__intro"><strong>Backup LocalStorage</strong><span>Backup hanya cache lokal dan pengaturan aplikasi; tidak mengubah database Supabase.</span></div>
+          <div class="tool-actions"><button id="backupLocalBtn" class="btn btn--secondary" type="button">Download Backup JSON</button><label class="btn btn--secondary file-button" for="restoreLocalFile">Restore Backup JSON</label><input id="restoreLocalFile" type="file" accept="application/json,.json" hidden /></div>
+          <div id="localBackupStatus" class="tool-status"></div>
+        </section>
+        <section class="tool-section">
+          <div class="tool-section__intro"><strong>Arsip barang</strong><span>Barang yang pernah tercatat pada stok opname tidak dihapus agar histori tetap utuh. Barang tersebut dipindahkan ke arsip dan dapat dipulihkan.</span></div>
+          <div class="archive-toolbar"><span id="archiveStatus" class="tool-status">Belum dimuat</span><button id="refreshArchiveBtn" class="btn btn--secondary btn--small" type="button">Muat Arsip</button></div>
+          <div id="archiveList" class="archive-list" hidden></div>
+          <nav id="archivePagination" class="pagination pagination--archive" aria-label="Halaman arsip" hidden>
+            <span id="archivePageInfo" class="pagination__info"></span>
+            <div class="pagination__actions">
+              <button id="archivePrevBtn" class="btn btn--secondary btn--small" type="button">← Sebelumnya</button>
+              <button id="archiveNextBtn" class="btn btn--secondary btn--small" type="button">Berikutnya →</button>
+            </div>
+          </nav>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- STOK OPNAME -->
+  <dialog id="opnameDialog" class="modal modal--xwide">
+    <div class="modal-surface modal-layout">
+      <header class="modal-header"><div><span class="eyebrow">STOK OPNAME</span><h2>Rekonsiliasi stok fisik</h2><p>Hitung fisik, simpan draft, lalu finalisasi untuk memperbarui stok database secara atomik.</p></div><button class="icon-button close-dialog" type="button" aria-label="Tutup">×</button></header>
+      <div id="opnameBody" class="modal-body opname-body">
+        <div id="opnameHome">
+          <div class="opname-toolbar"><div><strong>Sesi opname</strong><span id="opnameHomeStatus">Memuat riwayat...</span></div><button id="startOpnameBtn" class="btn btn--primary" type="button">Mulai Opname</button></div>
+          <div id="opnameSessions" class="session-list"></div>
+        </div>
+        <div id="opnameDetail" hidden>
+          <div class="opname-detail-head"><button id="backOpnameBtn" class="btn btn--quiet" type="button">← Riwayat</button><div><strong id="opnameNumber">-</strong><span id="opnameProgress">0 / 0 dihitung</span></div><div class="opname-detail-actions"><span id="opnameSaveStatus" class="autosave-status"></span><button id="cancelOpnameBtn" class="btn btn--danger-quiet" type="button">Batalkan</button><button id="finalizeOpnameBtn" class="btn btn--primary" type="button">Finalisasi</button></div></div>
+          <label class="search-box opname-search"><span>⌕</span><input id="opnameSearch" type="search" placeholder="Cari kode atau nama barang..." /></label>
+          <div class="opname-table-wrap"><div class="opname-table-head"><span>Barang</span><span>Stok sistem</span><span>Stok fisik</span><span>Selisih</span><span>Catatan</span></div><div id="opnameRows"></div></div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- GENERIC CONFIRM -->
+  <dialog id="confirmDialog" class="modal modal--small">
+    <div class="modal-surface">
+      <header class="modal-header"><div><span id="confirmEyebrow" class="eyebrow">KONFIRMASI</span><h2 id="confirmTitle">Konfirmasi</h2></div></header>
+      <div class="modal-body"><p id="confirmMessage" class="confirm-message"></p></div>
+      <footer class="modal-footer"><button id="confirmCancelBtn" class="btn btn--secondary" type="button">Batal</button><button id="confirmOkBtn" class="btn btn--primary" type="button">Lanjutkan</button></footer>
+    </div>
+  </dialog>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script src="config.js?v=6.4"></script>
+  <script src="app.js?v=6.4"></script>
+</body>
+</html>

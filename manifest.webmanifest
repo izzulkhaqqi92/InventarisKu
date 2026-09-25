@@ -1,0 +1,17 @@
+{
+  "name": "InventarisKu - Sistem Inventaris Barang",
+  "short_name": "InventarisKu",
+  "description": "Aplikasi PWA inventaris barang dengan autentikasi, stok opname, analitik, import/export, dan Supabase.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f6f8",
+  "theme_color": "#111827",
+  "lang": "id-ID",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
