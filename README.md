@@ -60,16 +60,3 @@ Barang yang sudah memiliki relasi dengan histori stok opname tidak dihapus perma
 
 Splash screen menampilkan icon aplikasi, nama InventarisKu, jenis aplikasi, identitas pembuat, dan animasi loading sederhana sesuai kebutuhan aplikasi.
 
-
-## Perbaikan v6.3 — gambar barang
-- Thumbnail, preview edit, dan detail memakai fallback signed URL dari `gambar_path` jika URL publik gagal.
-- Klik thumbnail/detail gambar membuka viewer khusus gambar + nama barang.
-- Tidak ada perubahan database/SQL.
-
-
-## Perbaikan v6.4 — image viewer
-- Viewer sekarang memakai URL gambar yang sudah terbukti tampil pada thumbnail/detail sebagai sumber pertama, sehingga tidak menunggu request Storage baru.
-- Jika sumber tersebut gagal, aplikasi baru mencoba signed URL dari `gambar_path`.
-- Area viewer memakai ukuran eksplisit 100% dengan `object-fit: contain`, sehingga gambar tidak bisa berukuran nol pada grid/modal tertentu.
-- Request viewer diberi token agar hasil async dari gambar lama tidak menimpa gambar yang baru dibuka.
-- Cache PWA dinaikkan ke v6.4.
