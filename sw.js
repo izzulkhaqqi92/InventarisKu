@@ -1,6 +1,6 @@
 "use strict";
-const CACHE_NAME="inventarisku-shell-v6.4";
-const APP_SHELL=["./","./index.html","./styles.css?v=6.4","./config.js?v=6.4","./app.js?v=6.4","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png"];
+const CACHE_NAME="inventarisku-shell-v6.5";
+const APP_SHELL=["./","./index.html","./styles.css?v=6.5","./config.js?v=6.5","./app.js?v=6.5","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener("fetch",event=>{
